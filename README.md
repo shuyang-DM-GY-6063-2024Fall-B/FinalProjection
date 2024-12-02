@@ -1,7 +1,7 @@
 # Milestone 2: Harry Potter Maze Game
 This project is an interactive maze game based on the Harry Potter theme. Players must navigate a maze made of hexagonal rooms to reach the center. Along the way, they will encounter obstacles like Dementors. Arduino is used to receive control signals from the user, such as a potentiometer to control direction and a button to open doors ("Alohomora") or defend against Dementors ("Expecto Patronum"). P5.js is responsible for displaying the maze and providing real-time feedback.
 
-For this week, I create a basic cell of this maze with the help of chatGPT in refining code and debugging.Now it allows user to move through "A","W","D","S", and can open the green door by press"O". And if user touch the door or wall without opening it,they would be reset to initial position.And the code I write as well as fake code are all stored in sketch.js.
+For this week, I create a basic cell of this maze with the help of chatGPT in refining code and debugging (like how to use draw() inside class).Now it allows user to move through "A","W","D","S", and can open the green door by press"O". And if user touch the door or wall without opening it,they would be reset to initial position.And the code I write as well as fake code are all stored in sketch.js.
 
 ##### Circuit Diagram
 ![alt text](image-2.png)

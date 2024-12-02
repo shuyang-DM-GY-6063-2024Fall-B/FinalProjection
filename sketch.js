@@ -179,17 +179,14 @@ class Player {
   isTouchingLine() {
     let lines = walls.concat(doors);
     
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
+    for (let line of lines) {
       let distance = distToLine(this.pos, line.start, line.end);
       if (distance < this.radius) {
         return true;
       }
-      else{
-        return false;
-      }
     }
-  }
+    return false;
+}
 
   resetPosition() {
     this.pos.set(width / 2, height / 2);
@@ -201,6 +198,49 @@ class Player {
   }
 }
 
+function keyPressed() {
+    if (key === 'O' || key === 'o') {
+      let nearestDoor = findNearestDoor();
+      if (nearestDoor) {
+        doors = doors.filter(door => door !== nearestDoor);
+      }
+    }
+  }
+  
+  function findNearestDoor() {
+    let nearest = null;
+    let minDist = Infinity;
+  
+    for (let door of doors) {
+      let midPoint = createVector((door.start.x + door.end.x) / 2, (door.start.y + door.end.y) / 2);
+      let dist = p5.Vector.dist(player.pos, midPoint);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = door;
+      }
+    }
+    return nearest;
+  }
+  
+  function distToLine(point, start, end) {
+    let lineVec = createVector(end.x - start.x, end.y - start.y);
+    let pointVec = createVector(point.x - start.x, point.y - start.y);
+    let dot = pointVec.dot(lineVec);
+    let len = lineVec.mag();
+    let param = dot / (len * len);
+  
+    let closest;
+    if (param < 0) {
+      closest = createVector(start.x, start.y);
+    } else if (param > 1) {
+      closest = createVector(end.x, end.y);
+    } else {
+      closest = createVector(start.x + param * lineVec.x, start.y + param * lineVec.y);
+    }
+  
+    return p5.Vector.dist(point, closest);
+  }
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
@@ -209,7 +249,7 @@ function setup() {
   let radius = 100;
 
   for (let i = 0; i < 6; i++) {
-    let angle = TWO_PI / 6 * i;
+    let angle = PI * 2 / 6 * i;
     hexagonCorners.push(createVector(centerX + cos(angle) * radius, centerY + sin(angle) * radius));
   }
 
@@ -235,45 +275,9 @@ function draw() {
   player.draw();
 }
 
-function keyPressed() {
-  if (key === 'O' || key === 'o') {
-    let nearestDoor = findNearestDoor();
-    if (nearestDoor) {
-      doors = doors.filter(door => door !== nearestDoor);
-    }
-  }
-}
-
-function findNearestDoor() {
-  let nearest = null;
-  let minDist = Infinity;
-
-  for (let door of doors) {
-    let midPoint = createVector((door.start.x + door.end.x) / 2, (door.start.y + door.end.y) / 2);
-    let dist = p5.Vector.dist(player.pos, midPoint);
-    if (dist < minDist) {
-      minDist = dist;
-      nearest = door;
-    }
-  }
-  return nearest;
-}
-
-function distToLine(point, start, end) {
-  let lineVec = createVector(end.x - start.x, end.y - start.y);
-  let pointVec = createVector(point.x - start.x, point.y - start.y);
-  let dot = pointVec.dot(lineVec);
-  let len = lineVec.mag();
-  let param = dot / (len * len);
-
-  let closest;
-  if (param < 0) {
-    closest = createVector(start.x, start.y);
-  } else if (param > 1) {
-    closest = createVector(end.x, end.y);
-  } else {
-    closest = createVector(start.x + param * lineVec.x, start.y + param * lineVec.y);
-  }
-
-  return p5.Vector.dist(point, closest);
-}
+// Follow the steps:
+// Increase the number of maze rooms
+// Introduce obstacles: Dementors
+// Add communication interface with Arduino to receive user input
+// Improve visualization
+// Add background music
