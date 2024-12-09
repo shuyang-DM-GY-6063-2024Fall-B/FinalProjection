@@ -1,5 +1,5 @@
 # Milstone 3：
-
+This week,I updated the circuit diagram and completed the basic maze setup. Additionally, I wrote the Arduino code for data transmission. Next week, I plan to refine the visuals, integrate p5.js with Arduino, and improve certain interactions (such as making the user return to the center of the current room instead of the maze's starting point when touching a wall). If time permits, I will also add wandering Dementors.
 ![alt text](image-6.png)
 
 # Milestone 2: Harry Potter Maze Game
