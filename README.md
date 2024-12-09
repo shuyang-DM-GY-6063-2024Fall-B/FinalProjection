@@ -1,3 +1,7 @@
+# Milstone 3：
+
+![alt text](image-6.png)
+
 # Milestone 2: Harry Potter Maze Game
 This project is an interactive maze game based on the Harry Potter theme. Players must navigate a maze made of hexagonal rooms to reach the center. Along the way, they will encounter obstacles like Dementors. Arduino is used to receive control signals from the user, such as a potentiometer to control direction and a button to open doors ("Alohomora") or defend against Dementors ("Expecto Patronum"). P5.js is responsible for displaying the maze and providing real-time feedback.
 
