@@ -1,18 +1,26 @@
 let hexagons = new Map();
 let edgesMap = new Map();
-
 let walls = new Set();
 let doors = new Set();
 let lines = [];
-
 let player;
-let playerRadius = 10;
+let playerRadius = 5;
 let moveSpeed = 5;
 let hexRadius = 50;
-
 let goalPosition = null;
 let gameWon = false;
-let restartButton;
+let dementors = [];
+let projectiles = [];
+let projectileSpeed = 7;
+let projectileRadius = 5;
+let initialPosition;
+let restartButton = { x: 0, y: 0, width: 150, height: 50 };
+let mSerial;
+let d2Value = 0;
+let d3Value = 0;
+
+let connectButton;
+let readyToReceive;
 
 class Wall {
   constructor(start, end) {
@@ -21,7 +29,7 @@ class Wall {
   }
 
   draw() {
-    stroke(0, 0, 255);
+    stroke(255, 215, 0);
     strokeWeight(3);
     line(this.start.x, this.start.y, this.end.x, this.end.y);
   }
@@ -35,7 +43,7 @@ class Door {
   }
 
   draw() {
-    stroke(255, 165, 0);
+    stroke(101, 67, 33); 
     strokeWeight(3);
     line(this.start.x, this.start.y, this.end.x, this.end.y);
   }
@@ -79,13 +87,12 @@ class Player {
   }
 
   resetPosition() {
-    this.pos.set(width / 2, height / 2);
+    this.pos.set(initialPosition.x, initialPosition.y);
   }
 
   checkGoalReached() {
     if (!gameWon && goalPosition && dist(this.pos.x, this.pos.y, goalPosition.x, goalPosition.y) < this.radius) {
       gameWon = true;
-      createRestartButton();
     }
   }
 
@@ -93,6 +100,63 @@ class Player {
     fill(0, 255, 0);
     noStroke();
     ellipse(this.pos.x, this.pos.y, this.radius * 2);
+  }
+}
+
+class Dementor {
+  constructor(x, y, radius, hexCenter) {
+    this.pos = createVector(x, y);
+    this.radius = radius;
+    this.speed = 2;
+    this.target = createVector(hexCenter.x, hexCenter.y);
+    this.hexCenter = hexCenter;
+  }
+
+  move() {
+    let direction = p5.Vector.sub(this.target, this.pos);
+    direction.setMag(this.speed);
+    this.pos.add(direction);
+
+    if (frameCount % 60 === 0) {
+      const angle = random(TWO_PI);
+      const distance = random(hexRadius - this.radius);
+      this.target = createVector(
+        this.hexCenter.x + cos(angle) * distance,
+        this.hexCenter.y + sin(angle) * distance
+      );
+    }
+  }
+
+  draw() {
+    fill(255, 255, 255, 150);
+    noStroke();
+    ellipse(this.pos.x, this.pos.y, this.radius * 2);
+  }
+
+  isTouchingPlayer() {
+    return dist(this.pos.x, this.pos.y, player.pos.x, player.pos.y) < this.radius + player.radius;
+  }
+}
+
+class Projectile {
+  constructor(x, y, targetX, targetY) {
+    this.pos = createVector(x, y);
+    this.vel = createVector(targetX - x, targetY - y).setMag(projectileSpeed);
+    this.radius = projectileRadius;
+  }
+
+  move() {
+    this.pos.add(this.vel);
+  }
+
+  draw() {
+    fill(255, 0, 0); 
+    noStroke();
+    ellipse(this.pos.x, this.pos.y, this.radius * 2);
+  }
+
+  isTouchingDementor(dementor) {
+    return dist(this.pos.x, this.pos.y, dementor.pos.x, dementor.pos.y) < this.radius + dementor.radius;
   }
 }
 
@@ -131,7 +195,7 @@ function createHexagon(centerX, centerY, radius) {
 
     if (!edgesMap.has(key)) {
       let edge;
-      if (random() < 0.6) {
+      if (random() < 0.4) {
         edge = new Wall(start, end);
         if (!edgesAlreadyExist(edge)) {
           walls.add(edge);
@@ -162,11 +226,7 @@ function edgesAlreadyExist(edge) {
   for (let existingWall of walls) {
     let wallStart = existingWall.start;
     let wallEnd = existingWall.end;
-    if (wallStart.x > wallEnd.x || (wallStart.x === wallEnd.x && wallStart.y > wallEnd.y)) {
-      [wallStart, wallEnd] = [wallEnd, wallStart];
-    }
-
-    if (start.equals(wallStart) && end.equals(wallEnd)) {
+    if (wallStart.equals(start) && wallEnd.equals(end)) {
       return true;
     }
   }
@@ -174,174 +234,208 @@ function edgesAlreadyExist(edge) {
   for (let existingDoor of doors) {
     let doorStart = existingDoor.start;
     let doorEnd = existingDoor.end;
-    if (doorStart.x > doorEnd.x || (doorStart.x === doorEnd.x && doorStart.y > doorEnd.y)) {
-      [doorStart, doorEnd] = [doorEnd, doorStart];
-    }
-
-    if (start.equals(doorStart) && end.equals(doorEnd)) {
+    if (doorStart.equals(start) && doorEnd.equals(end)) {
       return true;
     }
   }
 
   return false;
 }
+
 function setup() {
-  createCanvas(800, 600);
-  player = new Player(width / 2, height / 2, playerRadius);
+  createCanvas(windowWidth, windowHeight); 
+  restartButton.x = width / 2 - restartButton.width / 2;
+  restartButton.y = height / 2 + 50; 
+
+  mSerial = createSerial();
+
+  connectButton = createButton("Connect To Serial");
+  connectButton.position(width / 2 - 75, height / 2);
+  connectButton.mousePressed(connectToSerial);
 
   let hexWidth = hexRadius * 2;
   let hexHeight = sqrt(3) * hexRadius;
-  let rows = 5;
-  let cols = 5;
+  let rows = Math.ceil(height / hexHeight);
+  let cols = Math.ceil(width / hexWidth);
 
   let hexCenters = [];
-
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       let xOffset = col * hexWidth + (row % 2) * (hexWidth / 2);
       let yOffset = row * hexHeight;
-
-      let hexagon = createHexagon(xOffset + 100, yOffset + 100, hexRadius);
+      let hexagon = createHexagon(xOffset, yOffset, hexRadius);
       hexCenters.push(hexagon.center);
     }
   }
 
-  let start = createVector(width / 2, height / 2);
+  let startHex = random(hexCenters);
+  initialPosition = startHex.copy();
+  player = new Player(initialPosition.x, initialPosition.y, playerRadius);
+
   let minDistance = 2 * hexRadius;
 
   do {
     goalPosition = random(hexCenters);
-  } while (dist(start.x, start.y, goalPosition.x, goalPosition.y) < minDistance);
+  } while (dist(player.pos.x, player.pos.y, goalPosition.x, goalPosition.y) < minDistance);
+
+  for (let i = 0; i < 10; i++) {
+    let randomPosition = random(hexCenters);
+    dementors.push(new Dementor(randomPosition.x, randomPosition.y, 15, randomPosition));
+  }
+
+  readyToReceive = false;
 }
 
-
 function draw() {
-  background(220);
+  background(0);
 
   if (gameWon) {
+    fill(0, 255, 0);
+    textSize(32);
     textAlign(CENTER, CENTER);
-    textSize(50);
-    fill(0, 128, 255);
-    text("YOU WIN!", width / 2, height / 2 - 40);
+    text("You Won! Click Restart to Play Again", width / 2, height / 2);
+
+    fill(255);
+    stroke(0);
+    rect(restartButton.x, restartButton.y, restartButton.width, restartButton.height, 10);
+
+    fill(0);
+    noStroke();
+    textSize(24);
+    text("Restart", restartButton.x + restartButton.width / 2, restartButton.y + restartButton.height / 2 + 5);
+
     return;
   }
 
-  player.move();
-
-  for (let wall of walls) {
-    wall.draw();
-  }
-
-  for (let door of doors) {
-    door.draw();
-  }
+  for (let wall of walls) wall.draw();
+  for (let door of doors) door.draw();
 
   if (goalPosition) {
-    fill(0, 0, 255);
+    fill(255, 215, 0);
     noStroke();
-    ellipse(goalPosition.x, goalPosition.y, 10);
+    ellipse(goalPosition.x, goalPosition.y, 20);
   }
 
-  player.draw();
-}
+  for (let i = dementors.length - 1; i >= 0; i--) {
+    let dementor = dementors[i];
+    dementor.move();
+    dementor.draw();
+    if (dementor.isTouchingPlayer()) player.resetPosition();
 
-function keyPressed() {
-  if (key === 'O' || key === 'o') {
-    let closestDoor = null;
-    let minDistance = Infinity;
-
-    for (let door of doors) {
-      let doorCenter = createVector((door.start.x + door.end.x) / 2, (door.start.y + door.end.y) / 2);
-      let distance = dist(player.pos.x, player.pos.y, doorCenter.x, doorCenter.y);
-
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestDoor = door;
+    for (let j = projectiles.length - 1; j >= 0; j--) {
+      if (projectiles[j].isTouchingDementor(dementor)) {
+        dementors.splice(i, 1);
+        projectiles.splice(j, 1);
+        break;
       }
     }
+  }
 
-    if (closestDoor) {
-      closestDoor.open();
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    let projectile = projectiles[i];
+    projectile.move();
+    projectile.draw();
+    if (
+      projectile.pos.x < 0 ||
+      projectile.pos.x > width ||
+      projectile.pos.y < 0 ||
+      projectile.pos.y > height
+    ) {
+      projectiles.splice(i, 1);
     }
   }
-}
 
-function createRestartButton() {
-  if (restartButton) return;
+  player.move();
+  player.draw();
 
-  restartButton = createButton("Restart");
-  restartButton.position(width / 2 - 40, height / 2 + 20);
-  restartButton.mousePressed(() => {
-    restartGame();
-  });
-}
+  fill(255);
+  textSize(16);
+  text(`D2: ${d2Value}`, 10, 20);
+  text(`D3: ${d3Value}`, 10, 40);
 
-function restartGame() {
-  walls.clear();
-  doors.clear();
-  edgesMap.clear();
-  gameWon = false;
-  if (restartButton) {
-    restartButton.remove();
-    restartButton = null;
-  }
-  setup();
-}
-
-// Fake Code
-// Initialize variables for visual enhancements, integration, and interaction updates
-function nextWeekFeatures() {
-  
-  // Refine visuals
-  // Update visuals such as colors, shapes, or animations for better aesthetics
-
-  // Integrate p5.js with Arduino
-  // Set up communication between p5.js and Arduino for real-time data exchange
-  integrateArduino();
-
-  // Enhance user interaction for returning to the center of the current room
-  // When player touches a wall, reset their position to the center of the current room
-  if (playerTouchesWall()) {
-    resetPlayerToCurrentRoomCenter();
+  if (d2Value === 1) {
+    openNearestDoor();
   }
 
-  // If time allows, add wandering Dementors to the maze
-  // Generate Dementors that move randomly within the maze, chasing or interacting with the player
-  if (timeAllows) {
-    addWanderingDementors();
+  if (d3Value === 1) {
+    fireProjectileAtDementor();
+  }
+
+  if (readyToReceive && mSerial.opened()) {
+    mSerial.clear();
+    mSerial.write(0xAB);
+    readyToReceive = false;
+  }
+
+  if (mSerial.availableBytes() > 0) {
+    receiveSerial();
   }
 }
 
+function openNearestDoor() {
+  let nearestDoor = null;
+  let minDistance = Infinity;
 
-// Integrate p5.js with Arduino
-function integrateArduino() {
-  // Transmit player movement or other game data to Arduino
-}
-
-// Add wandering Dementors to the maze
-function wanderingDementors() {
-  // Create Dementor entities and place them in random positions in the maze
-  // Make them wander randomly or follow the player within a defined range
-  let dementor = new Dementor(randomMazePosition());
-  dementor.wander();
-}
-
-// Dementor class for creating and controlling Dementors
-class Dementor {
-  constructor(position) {
-    this.pos = position;
-    this.speed = 2;
+  for (let door of doors) {
+    let distance = dist(player.pos.x, player.pos.y, (door.start.x + door.end.x) / 2, (door.start.y + door.end.y) / 2);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestDoor = door;
+    }
   }
 
-  wander() {
-    // Make the Dementor move randomly within the maze
-    this.pos.x += random(-this.speed, this.speed);
-    this.pos.y += random(-this.speed, this.speed);
+  if (nearestDoor) {
+    nearestDoor.open();
   }
 
-  draw() {
-    // Visual representation of Dementor
-    fill(0, 0, 0);
-    ellipse(this.pos.x, this.pos.y, 20, 20);
+  d2Value = 0;
+}
+
+function fireProjectileAtDementor() {
+  if (dementors.length > 0) {
+    let targetDementor = dementors[0];
+    let projectile = new Projectile(player.pos.x, player.pos.y, targetDementor.pos.x, targetDementor.pos.y);
+    projectiles.push(projectile);
+  }
+
+  d3Value = 0;
+}
+
+function receiveSerial() {
+  let mLine = mSerial.readUntil("\n");
+  mLine = trim(mLine);
+  if (!mLine) return;
+
+  try {
+    let data = JSON.parse(mLine).data;
+    d2Value = data.D2;
+    d3Value = data.D3;
+
+    console.log(`Updated values - D2: ${d2Value}, D3: ${d3Value}`);
+  } catch (err) {
+    console.error("Failed to parse JSON:", mLine, err);
+  }
+
+  readyToReceive = true;
+}
+
+function connectToSerial() {
+  if (!mSerial.opened()) {
+    mSerial.open(9600);
+    connectButton.hide();
+    readyToReceive = true;
+  }
+}
+
+function mousePressed() {
+  if (gameWon) {
+    if (
+      mouseX > restartButton.x &&
+      mouseX < restartButton.x + restartButton.width &&
+      mouseY > restartButton.y &&
+      mouseY < restartButton.y + restartButton.height
+    ) {
+      location.reload(); 
+    }
   }
 }
