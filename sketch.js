@@ -96,7 +96,7 @@ class Player {
   }
 
   checkGoalReached() {
-    if (!gameWon && goalPosition && dist(this.pos.x, this.pos.y, goalPosition.x, goalPosition.y) < this.radius) {
+    if (!gameWon && goalPosition && dist(this.pos.x, this.pos.y, goalPosition.x, goalPosition.y) < this.radius*2) {
       gameWon = true;
     }
   }
@@ -311,8 +311,12 @@ function draw() {
     return;
   }
 
-  for (let wall of walls) wall.draw();
-  for (let door of doors) door.draw();
+  for (let wall of walls) {
+    wall.draw();
+  }
+  for (let door of doors) {
+    door.draw();
+  }
 
   if (goalPosition) {
     fill(255, 215, 0);
@@ -357,7 +361,7 @@ function draw() {
   }
 
   if (d3Value === 1) {
-    fireProjectileAtNearestDementor();
+    fireNearestDementor();
   }
 
   if (readyToReceive && mSerial.opened()) {
@@ -390,7 +394,7 @@ function openNearestDoor() {
   d2Value = 0;
 }
 
-function fireProjectileAtNearestDementor() {
+function fireNearestDementor() {
   if (dementors.length > 0) {
     let nearestDementor = null;
     let minDistance = Infinity;
@@ -408,25 +412,16 @@ function fireProjectileAtNearestDementor() {
       projectiles.push(projectile);
     }
   }
-
   d3Value = 0;
 }
-
 function receiveSerial() {
   let mLine = mSerial.readUntil("\n");
   mLine = trim(mLine);
   if (!mLine) return;
-
-  try {
-    let data = JSON.parse(mLine).data;
-    d2Value = data.D2;
-    d3Value = data.D3;
-
-    console.log(`Updated values - D2: ${d2Value}, D3: ${d3Value}`);
-  } catch (err) {
-    console.error("Failed to parse JSON:", mLine, err);
-  }
-
+  let data = JSON.parse(mLine).data; 
+  d2Value = data.D2;
+  d3Value = data.D3;
+  console.log(`Updated values - D2: ${d2Value}, D3: ${d3Value}`);
   readyToReceive = true;
 }
 
