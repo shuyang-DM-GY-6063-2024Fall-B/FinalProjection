@@ -21,6 +21,11 @@ let d3Value = 0;
 
 let connectButton;
 let readyToReceive;
+let mazeImage;
+
+function preload() {
+  mazeImage = loadImage("../Maze1.jpg");
+}
 
 class Wall {
   constructor(start, end) {
@@ -97,8 +102,9 @@ class Player {
   }
 
   draw() {
-    fill(0, 255, 0);
-    noStroke();
+    stroke(184, 115, 51);
+    strokeWeight(3);
+    fill(20, 20, 255);
     ellipse(this.pos.x, this.pos.y, this.radius * 2);
   }
 }
@@ -116,7 +122,6 @@ class Dementor {
     let direction = p5.Vector.sub(this.target, this.pos);
     direction.setMag(this.speed);
     this.pos.add(direction);
-
     if (frameCount % 60 === 0) {
       const angle = random(TWO_PI);
       const distance = random(hexRadius - this.radius);
@@ -282,15 +287,14 @@ function setup() {
     let randomPosition = random(hexCenters);
     dementors.push(new Dementor(randomPosition.x, randomPosition.y, 15, randomPosition));
   }
-
   readyToReceive = false;
 }
 
 function draw() {
-  background(0);
+  background(mazeImage);
 
   if (gameWon) {
-    fill(0, 255, 0);
+    fill(233, 233, 20);
     textSize(32);
     textAlign(CENTER, CENTER);
     text("You Won! Click Restart to Play Again", width / 2, height / 2);
@@ -348,17 +352,12 @@ function draw() {
   player.move();
   player.draw();
 
-  fill(255);
-  textSize(16);
-  text(`D2: ${d2Value}`, 10, 20);
-  text(`D3: ${d3Value}`, 10, 40);
-
   if (d2Value === 1) {
     openNearestDoor();
   }
 
   if (d3Value === 1) {
-    fireProjectileAtDementor();
+    fireProjectileAtNearestDementor();
   }
 
   if (readyToReceive && mSerial.opened()) {
@@ -391,11 +390,23 @@ function openNearestDoor() {
   d2Value = 0;
 }
 
-function fireProjectileAtDementor() {
+function fireProjectileAtNearestDementor() {
   if (dementors.length > 0) {
-    let targetDementor = dementors[0];
-    let projectile = new Projectile(player.pos.x, player.pos.y, targetDementor.pos.x, targetDementor.pos.y);
-    projectiles.push(projectile);
+    let nearestDementor = null;
+    let minDistance = Infinity;
+
+    for (let dementor of dementors) {
+      let distance = dist(player.pos.x, player.pos.y, dementor.pos.x, dementor.pos.y);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestDementor = dementor;
+      }
+    }
+
+    if (nearestDementor) {
+      let projectile = new Projectile(player.pos.x, player.pos.y, nearestDementor.pos.x, nearestDementor.pos.y);
+      projectiles.push(projectile);
+    }
   }
 
   d3Value = 0;

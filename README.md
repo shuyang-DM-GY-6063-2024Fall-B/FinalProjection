@@ -1,3 +1,78 @@
+# Milstone 4:
+Here’s the polished README integrating your description:
+
+Harry Potter Themed Interactive Hexagonal Maze
+Project Overview
+This project brings the Harry Potter magical universe to life through an interactive maze game. Players must navigate a hexagonal maze to reach the center while overcoming obstacles like Dementors. The game integrates p5.js for visualization and Arduino for real-world controls using a potentiometer for movement and a button for actions like opening doors (“Alohomora”) or defending against Dementors (“Expecto Patronum”).
+#### System diagram
+The system consists of two main components:
+Hardware (Arduino): Receives input signals (direction and actions).
+Software (p5.js): Displays the maze and processes real-time actions based on user input.
+Control: Potentiometer for direction, button for opening doors/casting spells.
+Feedback: RGB LEDs for spell success and visual updates on the computer screen.
+
+#### FTM diagram
+![alt text](image-8.png)
+Idle State: Awaiting serial data or user input.
+Move State: Player navigates through "A", "W", "D", "S" keys or potentiometer input.
+Action State:
+Open Door: User presses "O" or button ("Alohomora").
+Defend: User activates defense mechanism ("Expecto Patronum").
+Collision State: Reset player position if they hit a wall/door without opening it.
+Win State: Triggered when the player reaches the maze’s center.
+
+#### Circuit diagram
+![alt text](image-7.png)
+
+#### Sensors:
+Keyboard: Controls player movement direction.
+Button: Performs interactions (e.g., opening doors).
+#### Output Components:
+RGB LED: Indicates successful actions.
+Computer Screen: Displays the interactive maze with real-time feedback.
+
+#### How It Relates to Our Readings
+This project embodies the ideas discussed in Program or Be Programmed, where programming is not just a technical skill but a tool for storytelling and creating immersive experiences. By integrating physical components like Arduino with programming, the game enhances sensory engagement and interactivity.
+
+Programming becomes a medium for expressing emotions and ideas—transforming code into a magical world where players experience fantasy and wonder, just like storytelling through programming.
+
+#### How It Relates to Society
+In a society increasingly focused on virtual experiences (e.g., video games, VR), interactive systems offer ways for people to escape reality, explore themselves, and connect emotionally.
+
+This maze game aligns with the growing need for immersive virtual spaces, where players can find moments of magic and joy. The project highlights the role of programming in creating these meaningful digital utopias.
+
+#### Why This Is Important to Me
+This project represents a childhood dream come to life. Like many, I eagerly awaited my Hogwarts letter as a child. Fantasy worlds, such as Harry Potter or Ready Player One's Oasis, provide an escape from life’s hardships and a chance to experience wonder.
+
+By building this game, I hope to create a small piece of utopia—a magical world where players can feel the excitement of spells, adventure, and exploration.
+
+#### User Testing Feedback
+Through initial testing, the following insights were gathered:
+
+Responsiveness: Potentiometer and button inputs were intuitive but introduced minor latency due to serial communication.
+Interactivity: Users enjoyed opening doors and casting spells, enhancing immersion.
+#### Suggestions:
+Add sound effects for actions like “Alohomora” and “Expecto Patronum.”
+Provide visual feedback (e.g., animations) when interacting with the environment.
+#### How to Run the Project
+Upload the Arduino Code:
+Connect your Arduino board to the computer.
+Upload the arduino.ino file using the Arduino IDE.
+Set Up the p5.js Environment:
+Open the sketch.js file in a p5.js-compatible editor (e.g., p5.js Web Editor or local setup).
+Connect the Arduino:
+Ensure the serial port is accessible.
+Click Connect to Serial in the p5.js game window.
+Start the Game:
+Use the potentiometer for direction control and the button for actions.
+Alternatively, navigate using "A", "W", "D", "S" keys and press "O" to open doors.
+#### Future Improvements
+Add sound effects for magical spells.
+Improve maze complexity by generating dynamic hexagonal patterns.
+Optimize serial communication for faster input responsiveness.
+Integrate haptic feedback using motors for enhanced interaction.
+
+
 # Milstone 3：
 This week,I updated the circuit diagram and completed the basic maze setup. Additionally, I wrote the Arduino code for data transmission. Next week, I plan to refine the visuals, integrate p5.js with Arduino, and improve certain interactions (such as making the user return to the center of the current room instead of the maze's starting point when touching a wall). If time permits, I will also add wandering Dementors.
 ![alt text](image-6.png)
